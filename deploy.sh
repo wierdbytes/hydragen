@@ -113,7 +113,7 @@ configure() {
     prompt_with_default "DNS servers for VPN clients" "${INIT_DNS:-1.1.1.1, 8.8.8.8}" "INIT_DNS"
 
     # VPN subnet
-    prompt_with_default "VPN IPv4 subnet" "${INIT_IPV4_CIDR:-10.8.0.x/24}" "INIT_IPV4_CIDR"
+    prompt_with_default "VPN IPv4 subnet" "${INIT_IPV4_CIDR:-10.8.0.0/24}" "INIT_IPV4_CIDR"
 
     # Allowed IPs
     echo ""
@@ -147,7 +147,7 @@ configure() {
         INIT_IPV6_CIDR=""
     else
         DISABLE_IPV6="false"
-        INIT_IPV6_CIDR="${INIT_IPV6_CIDR:-fdcc:ad94:bacf:61a3::x/64}"
+        INIT_IPV6_CIDR="${INIT_IPV6_CIDR:-fdcc:ad94:bacf:61a3::/64}"
     fi
 
     # Write .env file
