@@ -65,49 +65,69 @@ configure() {
     echo ""
 
     # Domain
-    prompt_with_default "Enter your domain (e.g., vpn.example.com)" "" "DOMAIN"
+    prompt_with_default "Enter your domain (e.g., vpn.example.com)" "${DOMAIN:-}" "DOMAIN"
     while [ -z "$DOMAIN" ]; do
         echo -e "${RED}Domain is required!${NC}"
         prompt_with_default "Enter your domain" "" "DOMAIN"
     done
 
     # Email for Let's Encrypt
-    prompt_with_default "Enter email for SSL certificates" "" "ACME_EMAIL"
+    prompt_with_default "Enter email for SSL certificates" "${ACME_EMAIL:-}" "ACME_EMAIL"
     while [ -z "$ACME_EMAIL" ]; do
         echo -e "${RED}Email is required for Let's Encrypt!${NC}"
         prompt_with_default "Enter email for SSL certificates" "" "ACME_EMAIL"
     done
 
     # Admin username
-    prompt_with_default "Admin username" "admin" "INIT_USERNAME"
+    prompt_with_default "Admin username" "${INIT_USERNAME:-admin}" "INIT_USERNAME"
 
     # Admin password
-    local default_pass=$(generate_password)
-    echo -e "${CYAN}Admin password${NC} [auto-generate]: "
-    echo -en "  Enter password or press Enter for: ${YELLOW}${default_pass}${NC}: "
-    read -s INIT_PASSWORD
-    echo ""
-    if [ -z "$INIT_PASSWORD" ]; then
-        INIT_PASSWORD="$default_pass"
-        echo -e "${YELLOW}Using generated password: ${INIT_PASSWORD}${NC}"
-        echo -e "${RED}Save this password! It won't be shown again.${NC}"
+    if [ -n "$INIT_PASSWORD" ]; then
+        echo -e "${CYAN}Admin password${NC} [keep current]: "
+        echo -en "  Press Enter to keep current or enter new password: "
+        read -s new_password
+        echo ""
+        if [ -n "$new_password" ]; then
+            INIT_PASSWORD="$new_password"
+            echo -e "${GREEN}Password updated${NC}"
+        else
+            echo -e "${YELLOW}Keeping current password${NC}"
+        fi
+    else
+        local default_pass=$(generate_password)
+        echo -e "${CYAN}Admin password${NC} [auto-generate]: "
+        echo -en "  Enter password or press Enter for: ${YELLOW}${default_pass}${NC}: "
+        read -s INIT_PASSWORD
+        echo ""
+        if [ -z "$INIT_PASSWORD" ]; then
+            INIT_PASSWORD="$default_pass"
+            echo -e "${YELLOW}Using generated password: ${INIT_PASSWORD}${NC}"
+            echo -e "${RED}Save this password! It won't be shown again.${NC}"
+        fi
     fi
 
     # WireGuard port
-    prompt_with_default "WireGuard UDP port" "51820" "WG_PORT"
+    prompt_with_default "WireGuard UDP port" "${WG_PORT:-51820}" "WG_PORT"
 
     # DNS servers
-    prompt_with_default "DNS servers for VPN clients" "1.1.1.1, 8.8.8.8" "INIT_DNS"
+    prompt_with_default "DNS servers for VPN clients" "${INIT_DNS:-1.1.1.1, 8.8.8.8}" "INIT_DNS"
 
     # VPN subnet
-    prompt_with_default "VPN IPv4 subnet" "10.8.0.x/24" "INIT_IPV4_CIDR"
+    prompt_with_default "VPN IPv4 subnet" "${INIT_IPV4_CIDR:-10.8.0.x/24}" "INIT_IPV4_CIDR"
 
     # Allowed IPs
     echo ""
     echo -e "${CYAN}Traffic routing mode:${NC}"
-    echo "  1) Full tunnel - all traffic through VPN (default)"
+    echo "  1) Full tunnel - all traffic through VPN"
     echo "  2) Split tunnel - only VPN subnet traffic"
-    prompt_with_default "Choose option" "1" "TUNNEL_MODE"
+
+    # Determine current mode
+    local current_mode="1"
+    if [ -n "$INIT_ALLOWED_IPS" ] && [ "$INIT_ALLOWED_IPS" != "0.0.0.0/0, ::/0" ]; then
+        current_mode="2"
+    fi
+
+    prompt_with_default "Choose option" "$current_mode" "TUNNEL_MODE"
 
     if [ "$TUNNEL_MODE" = "2" ]; then
         INIT_ALLOWED_IPS="${INIT_IPV4_CIDR//x/0}"
@@ -117,13 +137,17 @@ configure() {
 
     # IPv6
     echo ""
-    prompt_with_default "Enable IPv6 support? (yes/no)" "yes" "IPV6_CHOICE"
+    local ipv6_default="yes"
+    if [ "$DISABLE_IPV6" = "true" ]; then
+        ipv6_default="no"
+    fi
+    prompt_with_default "Enable IPv6 support? (yes/no)" "$ipv6_default" "IPV6_CHOICE"
     if [ "$IPV6_CHOICE" = "no" ] || [ "$IPV6_CHOICE" = "n" ]; then
         DISABLE_IPV6="true"
         INIT_IPV6_CIDR=""
     else
         DISABLE_IPV6="false"
-        INIT_IPV6_CIDR="fdcc:ad94:bacf:61a3::x/64"
+        INIT_IPV6_CIDR="${INIT_IPV6_CIDR:-fdcc:ad94:bacf:61a3::x/64}"
     fi
 
     # Write .env file
@@ -153,17 +177,20 @@ ENVFILE
 
 # Check if .env exists
 if [ -f .env ]; then
+    source .env
     echo -e "${YELLOW}Existing configuration found.${NC}"
+    echo -e "  Domain:   ${DOMAIN}"
+    echo -e "  Username: ${INIT_USERNAME}"
+    echo ""
     prompt_with_default "Reconfigure? (yes/no)" "no" "RECONFIG"
     if [ "$RECONFIG" = "yes" ] || [ "$RECONFIG" = "y" ]; then
         configure
-    else
-        source .env
     fi
 else
     configure
-    source .env
 fi
+
+source .env
 
 echo ""
 
