@@ -215,6 +215,7 @@ if command -v ufw &> /dev/null; then
     echo -e "${YELLOW}Configuring firewall (ufw)...${NC}"
     ufw allow 80/tcp comment "HTTP (for Let's Encrypt)" >/dev/null 2>&1
     ufw allow 443/tcp comment "Xray Reality + HTTPS (via fallback to Traefik)" >/dev/null 2>&1
+    ufw allow 15672/tcp comment "3x-ui Panel" >/dev/null 2>&1
     ufw allow ${WG_PORT:-51820}/udp comment "WireGuard" >/dev/null 2>&1
     echo -e "${GREEN}Firewall configured${NC}"
 fi
@@ -232,7 +233,7 @@ echo -e "  ${CYAN}WG-Easy UI:${NC}   https://${DOMAIN}"
 echo -e "  ${CYAN}Username:${NC}     ${INIT_USERNAME:-admin}"
 echo -e "  ${CYAN}Password:${NC}     (saved in .env)"
 echo ""
-echo -e "  ${CYAN}3x-ui Panel:${NC}  https://panel.${DOMAIN}"
+echo -e "  ${CYAN}3x-ui Panel:${NC}  https://${DOMAIN}:15672"
 echo -e "  ${CYAN}3x-ui Login:${NC}  admin / admin ${RED}(change immediately!)${NC}"
 echo ""
 echo -e "  ${CYAN}WireGuard:${NC}    ${DOMAIN}:${WG_PORT:-51820}/udp"

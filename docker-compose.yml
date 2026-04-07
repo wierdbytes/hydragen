@@ -15,10 +15,12 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?ACME_EMAIL is required}"
+      - "--entrypoints.panel.address=:15672"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
       - "127.0.0.1:8443:443"
+      - "15672:15672"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -96,8 +98,8 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.3xui.rule=Host(`panel.${DOMAIN}`)"
-      - "traefik.http.routers.3xui.entrypoints=websecure"
+      - "traefik.http.routers.3xui.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.3xui.entrypoints=panel"
       - "traefik.http.routers.3xui.tls.certresolver=letsencrypt"
       - "traefik.http.services.3xui.loadbalancer.server.url=http://host.docker.internal:2053"
 
