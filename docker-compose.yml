@@ -84,6 +84,14 @@ services:
       - "traefik.http.routers.wg-easy.tls.certresolver=letsencrypt"
       - "traefik.http.services.wg-easy.loadbalancer.server.port=51821"
 
+  sni-router:
+    image: nginx:alpine
+    container_name: sni-router
+    network_mode: host
+    volumes:
+      - ./sni-router.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+
   3x-ui:
     image: ghcr.io/mhsanaei/3x-ui:latest
     container_name: 3xui

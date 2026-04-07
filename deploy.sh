@@ -135,6 +135,10 @@ configure() {
         INIT_ALLOWED_IPS="0.0.0.0/0, ::/0"
     fi
 
+    # Reality cover site
+    echo ""
+    prompt_with_default "Reality cover site (camouflage dest)" "${REALITY_COVER_SITE:-petrovich.ru:443}" "REALITY_COVER_SITE"
+
     # IPv6
     echo ""
     local ipv6_default="yes"
@@ -170,6 +174,7 @@ ENVFILE
     echo "INIT_ALLOWED_IPS='${INIT_ALLOWED_IPS}'" >> .env
     echo "DISABLE_IPV6='${DISABLE_IPV6}'" >> .env
     echo "INIT_ENABLED='true'" >> .env
+    echo "REALITY_COVER_SITE='${REALITY_COVER_SITE}'" >> .env
 
     chmod 600 .env
     echo -e "${GREEN}Configuration saved to .env${NC}"
@@ -220,6 +225,26 @@ if command -v ufw &> /dev/null; then
     echo -e "${GREEN}Firewall configured${NC}"
 fi
 
+# Generate SNI router config (nginx stream proxy between xray Reality and Traefik)
+echo -e "${YELLOW}Generating SNI router config...${NC}"
+cat > sni-router.conf << NGINXEOF
+events {
+    worker_connections 512;
+}
+stream {
+    map \$ssl_preread_server_name \$backend {
+        ${DOMAIN}    127.0.0.1:8443;
+        default      ${REALITY_COVER_SITE:-petrovich.ru:443};
+    }
+    server {
+        listen 8444;
+        ssl_preread on;
+        proxy_pass \$backend;
+    }
+}
+NGINXEOF
+echo -e "${GREEN}SNI router config saved${NC}"
+
 # Start the service
 echo -e "${YELLOW}Starting services...${NC}"
 docker compose up -d
@@ -237,6 +262,9 @@ echo -e "  ${CYAN}3x-ui Panel:${NC}  https://${DOMAIN}:15672"
 echo -e "  ${CYAN}3x-ui Login:${NC}  admin / admin ${RED}(change immediately!)${NC}"
 echo ""
 echo -e "  ${CYAN}WireGuard:${NC}    ${DOMAIN}:${WG_PORT:-51820}/udp"
+echo ""
+echo -e "  ${CYAN}Reality Dest:${NC} Set to ${YELLOW}127.0.0.1:8444${NC} in 3x-ui inbound"
+echo -e "  ${CYAN}Cover Site:${NC}   ${REALITY_COVER_SITE:-petrovich.ru:443}"
 echo ""
 echo -e "${YELLOW}Note:${NC} SSL certificate will be issued automatically."
 echo "First request may take a few seconds."
