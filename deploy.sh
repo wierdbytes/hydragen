@@ -245,6 +245,26 @@ stream {
 NGINXEOF
 echo -e "${GREEN}SNI router config saved${NC}"
 
+# Generate Traefik dynamic config for 3x-ui panel (file provider, avoids Docker provider issues with host network)
+echo -e "${YELLOW}Generating Traefik dynamic config...${NC}"
+cat > traefik-dynamic.yml << TRAEFIKEOF
+http:
+  routers:
+    3xui:
+      rule: "Host(\`${DOMAIN}\`)"
+      entryPoints:
+        - panel
+      tls:
+        certResolver: letsencrypt
+      service: 3xui
+  services:
+    3xui:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:2053"
+TRAEFIKEOF
+echo -e "${GREEN}Traefik dynamic config saved${NC}"
+
 # Start the service
 echo -e "${YELLOW}Starting services...${NC}"
 docker compose up -d

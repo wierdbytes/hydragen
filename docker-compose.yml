@@ -16,6 +16,7 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?ACME_EMAIL is required}"
       - "--entrypoints.panel.address=:15672"
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
@@ -26,6 +27,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_certs:/letsencrypt
+      - ./traefik-dynamic.yml:/etc/traefik/dynamic.yml:ro
     networks:
       - wg-network
     restart: unless-stopped
@@ -38,11 +40,6 @@ services:
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH:-}"
-      # 3x-ui panel (labels here because 3x-ui uses network_mode:host, invisible to Docker provider)
-      - "traefik.http.routers.3xui.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.3xui.entrypoints=panel"
-      - "traefik.http.routers.3xui.tls.certresolver=letsencrypt"
-      - "traefik.http.services.3xui.loadbalancer.server.url=http://host.docker.internal:2053"
 
   wg-easy:
     image: ghcr.io/wg-easy/wg-easy:15
