@@ -38,6 +38,11 @@ services:
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH:-}"
+      # 3x-ui panel (labels here because 3x-ui uses network_mode:host, invisible to Docker provider)
+      - "traefik.http.routers.3xui.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.3xui.entrypoints=panel"
+      - "traefik.http.routers.3xui.tls.certresolver=letsencrypt"
+      - "traefik.http.services.3xui.loadbalancer.server.url=http://host.docker.internal:2053"
 
   wg-easy:
     image: ghcr.io/wg-easy/wg-easy:15
@@ -104,12 +109,6 @@ services:
     tty: true
     network_mode: host
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.3xui.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.3xui.entrypoints=panel"
-      - "traefik.http.routers.3xui.tls.certresolver=letsencrypt"
-      - "traefik.http.services.3xui.loadbalancer.server.url=http://host.docker.internal:2053"
 
 volumes:
   wg_data:
