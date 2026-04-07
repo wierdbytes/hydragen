@@ -232,6 +232,7 @@ events {
     worker_connections 512;
 }
 stream {
+    resolver 1.1.1.1 8.8.8.8;
     map \$ssl_preread_server_name \$backend {
         ${DOMAIN}    127.0.0.1:8443;
         default      ${REALITY_COVER_SITE:-petrovich.ru:443};
