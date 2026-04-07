@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-echo -e "${GREEN}=== WG-Easy + Traefik Deployment ===${NC}"
+echo -e "${GREEN}=== WG-Easy + 3x-ui + Traefik Deployment ===${NC}"
 echo ""
 
 # Check if running as root
@@ -214,7 +214,7 @@ fi
 if command -v ufw &> /dev/null; then
     echo -e "${YELLOW}Configuring firewall (ufw)...${NC}"
     ufw allow 80/tcp comment "HTTP (for Let's Encrypt)" >/dev/null 2>&1
-    ufw allow 443/tcp comment "HTTPS" >/dev/null 2>&1
+    ufw allow 443/tcp comment "Xray Reality + HTTPS (via fallback to Traefik)" >/dev/null 2>&1
     ufw allow ${WG_PORT:-51820}/udp comment "WireGuard" >/dev/null 2>&1
     echo -e "${GREEN}Firewall configured${NC}"
 fi
@@ -228,11 +228,14 @@ echo -e "${GREEN}╔════════════════════
 echo -e "${GREEN}║       Deployment Complete!                 ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "  ${CYAN}Web UI:${NC}     https://${DOMAIN}"
-echo -e "  ${CYAN}Username:${NC}   ${INIT_USERNAME:-admin}"
-echo -e "  ${CYAN}Password:${NC}   (saved in .env)"
+echo -e "  ${CYAN}WG-Easy UI:${NC}   https://${DOMAIN}"
+echo -e "  ${CYAN}Username:${NC}     ${INIT_USERNAME:-admin}"
+echo -e "  ${CYAN}Password:${NC}     (saved in .env)"
 echo ""
-echo -e "  ${CYAN}WireGuard:${NC}  ${DOMAIN}:${WG_PORT:-51820}/udp"
+echo -e "  ${CYAN}3x-ui Panel:${NC}  https://panel.${DOMAIN}"
+echo -e "  ${CYAN}3x-ui Login:${NC}  admin / admin ${RED}(change immediately!)${NC}"
+echo ""
+echo -e "  ${CYAN}WireGuard:${NC}    ${DOMAIN}:${WG_PORT:-51820}/udp"
 echo ""
 echo -e "${YELLOW}Note:${NC} SSL certificate will be issued automatically."
 echo "First request may take a few seconds."
